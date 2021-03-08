@@ -5,19 +5,22 @@ import pandas as pd
 import numpy as np
 import torch
 
-def calc_mean_std(loader):
-    # imgs = []
-    # for ind,row in df.iterrows():
-    #     print(row['path'])
-    #     img = Image.open(row['path'])
-    #     img = img.resize((30,40))
-    #     img_ar = np.array(img)
-    #     imgs.append(img_ar)
-    # ar = np.array(imgs)
-    # mean, std = ar.mean(axis=0), ar.std(axis=0)
-    # print(mean,std)
-    # return mean ,std
+def save_ckp(state, checkpoint_path):
+    f_path = checkpoint_path
+    torch.save(state, f_path)
 
+def load_ckp(checkpoint_fpath, model, optimizer):
+    checkpoint = torch.load(checkpoint_fpath)
+    # initialize state_dict from checkpoint to model
+    model.load_state_dict(checkpoint['state_dict'])
+    # initialize optimizer from checkpoint to optimizer
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    # initialize valid_loss_min from checkpoint to valid_loss_min
+    valid_acc = checkpoint['valid_acc']
+    # return model, optimizer, epoch value, min validation loss 
+    return model, optimizer, checkpoint['epoch'], valid_acc
+
+def calc_mean_std(loader):
     channels_sum, channels_squared_sum, num_batches = 0,0,0
 
     for data, _ in loader:
