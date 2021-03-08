@@ -3,20 +3,33 @@ import glob
 import os
 import pandas as pd
 import numpy as np
+import torch
 
-def calc_mean_std(df):
-    imgs = []
-    for ind,row in df.iterrows():
-        print(row['path'])
-        img = Image.open(row['path'])
-        img = img.resize((30,40))
-        img_ar = np.array(img)
-        imgs.append(img_ar)
+def calc_mean_std(loader):
+    # imgs = []
+    # for ind,row in df.iterrows():
+    #     print(row['path'])
+    #     img = Image.open(row['path'])
+    #     img = img.resize((30,40))
+    #     img_ar = np.array(img)
+    #     imgs.append(img_ar)
+    # ar = np.array(imgs)
+    # mean, std = ar.mean(axis=0), ar.std(axis=0)
+    # print(mean,std)
+    # return mean ,std
+
+    channels_sum, channels_squared_sum, num_batches = 0,0,0
+
+    for data, _ in loader:
+        channels_sum +=torch.mean(data,dim=[0,2,3])
+        channels_squared_sum += torch.mean(data**2, dim=[0,2,3])
+        num_batches+=1
+    
+    mean = channels_sum/num_batches
+    std = (channels_squared_sum/num_batches - mean**2)**0.5
+    
+    return mean,std
         
-    ar = np.array(imgs)
-    mean, std = ar.mean(axis=0), ar.std(axis=0)
-    print(mean,std)
-    return mean ,std
 
 def save_in_jpg(path):
     im = Image.open(path)

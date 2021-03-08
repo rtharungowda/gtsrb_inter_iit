@@ -1,70 +1,111 @@
+import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+from torch import nn, optim
 
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from PIL import Image
 
 import numpy as np
+import time
+import copy
+
 import sys
-sys.path.insert(1,'/content/gtsrb_inter_iit/utils')
+sys.path.insert(1,'/content/gtsrb_inter_iit/engine/')
+from model import TrafficSignNet
+from dataloader import preprocess
 
-from tools import calc_mean_std
+BATCH_SIZE = 64
+EPOCHS = 200
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+LR = 0.0001
 
-class GTSRB(Dataset):
-    def __init__(self,
-                dataframe,
-                transforms = None):
-        self.dataframe = df
-        self.tf = transforms
-    
-    def __len__(self):
-        return len(df)
-    
-    def __getitem__(self,index):
-        x = Image.open(self.df['path'].iloc[index])
-        y = self.df['label'].iloc[index]
+def train_model(model, 
+                criterion, 
+                optimizer, 
+                dataloaders,
+                dataset_sizes, 
+                scheduler=None):
 
-        if self.tf is not None:
-            x = self.tf(x)
+    device = DEVICE
+    num_epochs = EPOCHS
+    model = model.to(device)
 
-        return x,y
+    since = time.time()
 
-def preprocess(gtsrb, ratio=0.2):
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_acc = 0.0
 
-    num_classes = gtsrb['label'].nunique()
+    for epoch in range(num_epochs):
+        print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+        print('-' * 10)
 
-    df_train, df_val = train_test_split(gtsrb,
-                                        stratify=gtsrb['label'],
-                                        test_size=ratio)
-    print(f"train imgs = {len(df_train)} val imgs = {len(df_val)}")
-    df = {'train':df_train,'val':df_val}
+        # Each epoch has a training and validation phase
+        for phase in ['train', 'val']:
+            if phase == 'train':
+                model.train()  # Set model to training mode
+            else:
+                model.eval()   # Set model to evaluate mode
 
-    data_transforms = {
-        "train": transforms.Compose([
-            transforms.Resize((30,40)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225]),
-        ]),
-        "val": transforms.Compose([
-            transforms.Resize((30,40)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225]),
-        ])
-    }
+            running_loss = 0.0
+            running_corrects = 0
 
+            # Iterate over data.
+            for inputs, labels in dataloaders[phase]:
+                inputs = inputs.to(device)
+                labels = labels.to(device)
 
-    dataset = {x: GTSRB(dataframe=df[x], transforms=data_transforms[x]) 
-                for x in ['train','val']
-            }
+                # zero the parameter gradients
+                optimizer.zero_grad()
 
-    dataloader = {x: DataLoader(dataset[x], batch_size=64, shuffle=True, num_workers=4)
-                for x in ['train','val']
-            }
+                # forward
+                # track history if only in train
+                with torch.set_grad_enabled(phase == 'train'):
+                    outputs = model(inputs)
+                    _, preds = torch.max(outputs, 1)
+                    loss = criterion(outputs, labels)
 
+                    # backward + optimize only if in training phase
+                    if phase == 'train':
+                        loss.backward()
+                        optimizer.step()
+
+                # statistics
+                running_loss += loss.item() * inputs.size(0)
+                running_corrects += torch.sum(preds == labels.data)
+            if phase == 'train':
+                if scheduler is not None:
+                    scheduler.step()
+
+            epoch_loss = running_loss / dataset_sizes[phase]
+            epoch_acc = running_corrects.double() / dataset_sizes[phase]
+
+            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+                phase, epoch_loss, epoch_acc))
+
+            # deep copy the model
+            if phase == 'val' and epoch_acc > best_acc:
+                best_acc = epoch_acc
+                best_model_wts = copy.deepcopy(model.state_dict())
+
+        print()
+
+    time_elapsed = time.time() - since
+    print('Training complete in {:.0f}m {:.0f}s'.format(
+        time_elapsed // 60, time_elapsed % 60))
+    print('Best val Acc: {:4f}'.format(best_acc))
+
+    # load best model weights
+    model.load_state_dict(best_model_wts)
+    return model
 
 
 if __name__ == "__main__":
     df = pd.read_csv("/content/gtsrb_inter_iit/utils/gtsrb_train.csv")
-    # preprocess(df,0.1)
-    calc_mean_std(df)
+    dataset_sizes,dataloaders = preprocess(df,ratio=0.1)
+    model = TrafficSignNet()
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=LR)
+
+    final_model = train_model(model,criterion,optimizer,dataloaders,dataset_sizes)
