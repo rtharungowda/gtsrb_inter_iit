@@ -11,7 +11,7 @@ sys.path.insert(1,'/content/gtsrb_inter_iit/utils')
 
 from tools import calc_mean_std
 
-BATCH_SIZE = 64
+BATCH_SIZE = 1024
 
 class GTSRB(Dataset):
     def __init__(self,
@@ -49,7 +49,20 @@ def mean_std(df, ratio=0.2):
     mean, std = calc_mean_std(train_loader)
     return mean,std 
 
-def preprocess(gtsrb, ratio=0.2):
+def preprocess(gtsrb, test=False ,ratio=0.2):
+
+    if test:
+        test_transforms = transforms.Compose([
+            transforms.Resize((32,32)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.3401, 0.3120, 0.3212],[0.2725, 0.2609, 0.2669]),
+        ])
+
+        test_dataset = GTSRB(dataframe=gtsrb, transforms=test_transforms)
+
+        test_dataloader =  DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+
+        return test_dataloader,len(test_dataset)
 
     num_classes = gtsrb['label'].nunique()
 

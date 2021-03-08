@@ -18,7 +18,6 @@ from model import TrafficSignNet
 from dataloader import preprocess
 from tools import save_ckp
 
-BATCH_SIZE = 1024
 EPOCHS = 10
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(DEVICE)
