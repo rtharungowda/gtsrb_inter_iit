@@ -1,4 +1,5 @@
 import torch
+import torchvision
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from torch import nn, optim
@@ -18,10 +19,13 @@ from model import TrafficSignNet
 from dataloader import preprocess
 from tools import save_ckp
 
-EPOCHS = 10
+from torch.utils.tensorboard import SummaryWriter
+
+EPOCHS = 100
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(DEVICE)
 LR = 0.001
+BATCH_SIZE = 128
 
 def train_model(model, 
                 criterion, 
@@ -38,6 +42,16 @@ def train_model(model,
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
+
+    writer = SummaryWriter(
+            f"runs/bs_{BATCH_SIZE}_LR_{LR}"
+        )
+
+    images, _ = next(iter(dataloaders['train']))
+    writer.add_graph(model, images.to(device))
+    writer.close()
+
+    step = 0
 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -77,14 +91,28 @@ def train_model(model,
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
 
-                # print(f"running_loss {running_loss} running_corrects {running_corrects}")
+                if phase == 'train':
+                    img_grid = torchvision.utils.make_grid(inputs)
+                    writer.add_image("gtsrb_images", img_grid)
+                    writer.add_histogram("fc2", model.fc2.weight)
+                    writer.add_scalar("Training loss", loss, global_step=step)
+                    step+=1
+                print(f"running_loss {running_loss} running_corrects {running_corrects}")
+
+            epoch_loss = running_loss / dataset_sizes[phase]
+            epoch_acc = running_corrects.double() / dataset_sizes[phase]
 
             if phase == 'train':
                 if scheduler is not None:
                     scheduler.step()
-
-            epoch_loss = running_loss / dataset_sizes[phase]
-            epoch_acc = running_corrects.double() / dataset_sizes[phase]
+                
+                writer.add_hparams(
+                    {"lr": LR, "bsize": BATCH_SIZE},
+                    {
+                        "accuracy": epoch_acc,
+                        "loss": epoch_loss,
+                    },
+                )
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
@@ -108,7 +136,7 @@ def train_model(model,
 
 if __name__ == "__main__":
     df = pd.read_csv("/content/gtsrb_inter_iit/utils/gtsrb_train.csv")
-    dataset_sizes,dataloaders = preprocess(df,ratio=0.1)
+    dataset_sizes,dataloaders = preprocess(df,ratio=0.1,batch_size=BATCH_SIZE)
     model = TrafficSignNet()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LR)
@@ -123,5 +151,5 @@ if __name__ == "__main__":
         }
         
     # save checkpoint
-    checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model2.pt"
+    checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model3.pt"
     save_ckp(checkpoint, checkpoint_path)

@@ -11,8 +11,6 @@ sys.path.insert(1,'/content/gtsrb_inter_iit/utils')
 
 from tools import calc_mean_std
 
-BATCH_SIZE = 1024
-
 class GTSRB(Dataset):
     def __init__(self,
                 dataframe,
@@ -49,7 +47,7 @@ def mean_std(df, ratio=0.2):
     mean, std = calc_mean_std(train_loader)
     return mean,std 
 
-def preprocess(gtsrb, test=False ,ratio=0.2):
+def preprocess(gtsrb, test=False ,ratio=0.2, batch_size = 64):
 
     if test:
         test_transforms = transforms.Compose([
@@ -60,9 +58,9 @@ def preprocess(gtsrb, test=False ,ratio=0.2):
 
         test_dataset = GTSRB(dataframe=gtsrb, transforms=test_transforms)
 
-        test_dataloader =  DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+        test_dataloader =  DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 
-        return test_dataloader,len(test_dataset)
+        return len(test_dataset), test_dataloader
 
     num_classes = gtsrb['label'].nunique()
 
@@ -94,7 +92,7 @@ def preprocess(gtsrb, test=False ,ratio=0.2):
 
     dataset_sizes = {x: len(img_dataset[x]) for x in ['train','val']}
 
-    dataloader = {x: DataLoader(img_dataset[x], batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
+    dataloader = {x: DataLoader(img_dataset[x], batch_size=batch_size, shuffle=True, num_workers=2)
                 for x in ['train','val']
             }
 

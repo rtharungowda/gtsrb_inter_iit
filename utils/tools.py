@@ -10,14 +10,11 @@ def save_ckp(state, checkpoint_path):
     torch.save(state, f_path)
 
 def load_ckp(checkpoint_fpath, model, optimizer):
+
     checkpoint = torch.load(checkpoint_fpath)
-    # initialize state_dict from checkpoint to model
     model.load_state_dict(checkpoint['state_dict'])
-    # initialize optimizer from checkpoint to optimizer
     optimizer.load_state_dict(checkpoint['optimizer'])
-    # initialize valid_loss_min from checkpoint to valid_loss_min
-    valid_acc = checkpoint['valid_acc']
-    # return model, optimizer, epoch value, min validation loss 
+    valid_acc = checkpoint['valid_acc'] 
     return model, optimizer, checkpoint['epoch'], valid_acc
 
 def calc_mean_std(loader):
