@@ -49,7 +49,7 @@ def train_model(model,
 
     images, _ = next(iter(dataloaders['train']))
     writer.add_graph(model, images.to(device))
-    writer.close()
+    # writer.close()
 
     step = 0
 

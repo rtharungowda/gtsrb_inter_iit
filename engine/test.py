@@ -65,13 +65,15 @@ def make_predictions(model,
 
     plt.figure(figsize=(10,10))
     plot = sns.heatmap(confusion_matrix(all_labels, all_preds), annot = False)
-    plt.savefig("confusion_mat.png")
+    plt.savefig("confusion_mat_3.png")
 
 if __name__ == "__main__":
     # prep_csv("/content/GTSRB/GT-final_test.csv","/content/GTSRB/Final_Test/Images")
-    df = pd.read_csv("/content/gtsrb_inter_iit/utils/gtsrb_test.csv")
+    path = "/content/gtsrb_inter_iit/utils/gtsrb_train.csv"
+    print(path)
+    df = pd.read_csv(path)
     dataset_size ,dataloader = preprocess(df,test=True,batch_size=64)
     model = TrafficSignNet().to(DEVICE)
     optimizer = optim.Adam(model.parameters(),lr=0.001)
-    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/model2.pt", model, optimizer)
+    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/model3.pt", model, optimizer)
     make_predictions(model, dataloader, dataset_size)
