@@ -9,9 +9,9 @@ def save_ckp(state, checkpoint_path):
     f_path = checkpoint_path
     torch.save(state, f_path)
 
-def load_ckp(checkpoint_fpath, model, optimizer):
+def load_ckp(checkpoint_fpath, model, optimizer, device):
 
-    checkpoint = torch.load(checkpoint_fpath)
+    checkpoint = torch.load(checkpoint_fpath,map_location=device)
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     valid_acc = checkpoint['valid_acc'] 

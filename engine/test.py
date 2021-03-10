@@ -75,5 +75,5 @@ if __name__ == "__main__":
     dataset_size ,dataloader = preprocess(df,test=True,batch_size=64)
     model = TrafficSignNet().to(DEVICE)
     optimizer = optim.Adam(model.parameters(),lr=0.001)
-    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/model3.pt", model, optimizer)
+    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/model3.pt", model, optimizer, DEVICE)
     make_predictions(model, dataloader, dataset_size)
