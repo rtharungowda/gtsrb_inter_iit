@@ -2,10 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-NUM_CLASSES = 43  # GTSRB as 43 classes
-
 class TrafficSignNet(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes):
         super(TrafficSignNet, self).__init__()
         self.stn = Stn()
         self.conv1 = nn.Conv2d(3, 100, 5)
@@ -17,7 +15,7 @@ class TrafficSignNet(nn.Module):
         self.conv3_bn = nn.BatchNorm2d(250)
         self.fc1 = nn.Linear(250 * 3 * 3, 350)
         self.fc1_bn = nn.BatchNorm1d(350)
-        self.fc2 = nn.Linear(350, NUM_CLASSES)
+        self.fc2 = nn.Linear(350, num_classes)
         self.dropout = nn.Dropout(p=0.5)
 
     def forward(self, x):

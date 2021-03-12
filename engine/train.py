@@ -135,9 +135,11 @@ def train_model(model,
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("/content/gtsrb_inter_iit/utils/gtsrb_train.csv")
+    df = pd.read_csv("/content/gtsrb_inter_iit/utils/gtsrb_train_all.csv")
     dataset_sizes,dataloaders = preprocess(df,ratio=0.1,batch_size=BATCH_SIZE)
-    model = TrafficSignNet()
+    num_classes = df['label'].nunique()
+    print(f"number of classes {num_classes}")
+    model = TrafficSignNet(num_classes)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LR)
 
@@ -151,5 +153,5 @@ if __name__ == "__main__":
         }
         
     # save checkpoint
-    checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model3.pt"
+    checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model4.pt"
     save_ckp(checkpoint, checkpoint_path)
