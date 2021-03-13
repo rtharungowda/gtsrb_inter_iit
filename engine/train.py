@@ -5,6 +5,8 @@ from torchvision import transforms
 from torch import nn, optim
 
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
+
 import pandas as pd
 from PIL import Image
 
@@ -27,6 +29,8 @@ print(DEVICE)
 LR = 0.001
 BATCH_SIZE = 64
 
+scaler = torch.cuda.amp.GradScaler()
+
 def train_model(model, 
                 criterion, 
                 optimizer, 
@@ -43,15 +47,17 @@ def train_model(model,
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
-    writer = SummaryWriter(
-            f"runs/bs_{BATCH_SIZE}_LR_{LR}"
-        )
+    # writer = SummaryWriter(
+    #         f"runs/bs_{BATCH_SIZE}_LR_{LR}"
+    #     )
 
-    images, _ = next(iter(dataloaders['train']))
-    writer.add_graph(model, images.to(device))
+    # images, _ = next(iter(dataloaders['train']))
+    # writer.add_graph(model, images.to(device))
     # writer.close()
 
-    step = 0
+    loss_p = {'train':[],'val':[]}
+    acc_p = {'train':[],'val':[]}
+    f1_p = {'train':[],'val':[]}
 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -66,7 +72,8 @@ def train_model(model,
 
             running_loss = 0.0
             running_corrects = 0
-
+            all_preds = []
+            all_labels = []
             # Iterate over data.
             for inputs, labels in dataloaders[phase]:
                 inputs = inputs.to(device)
@@ -84,35 +91,35 @@ def train_model(model,
 
                     # backward + optimize only if in training phase
                     if phase == 'train':
-                        loss.backward()
-                        optimizer.step()
+                        # loss.backward()
+                        # optimizer.step()
+
+                        scaler.scale(loss).backward()
+                        scaler.step(optimizer)
+                        scaler.update()
+
+                preds_on = preds.to('cpu').tolist()
+                labels_on = labels.data.to('cpu').tolist()
+                all_preds.extend(preds_on)
+                all_labels.extend(labels_on)
 
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
 
-                if phase == 'train':
-                    img_grid = torchvision.utils.make_grid(inputs)
-                    writer.add_image("gtsrb_images", img_grid)
-                    writer.add_histogram("fc2", model.fc2.weight)
-                    writer.add_scalar("Training loss", loss, global_step=step)
-                    step+=1
                 print(f"running_loss {running_loss} running_corrects {running_corrects}")
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
+            F1_score = f1_score( all_labels, all_preds, zero_division=1, average='weighted')
+
+            loss_p[phase].append(epoch_loss)
+            acc_p[phase].append(epoch_acc)
+            f1_p[phase].append(F1_score)
 
             if phase == 'train':
                 if scheduler is not None:
                     scheduler.step()
-                
-                writer.add_hparams(
-                    {"lr": LR, "bsize": BATCH_SIZE},
-                    {
-                        "accuracy": epoch_acc,
-                        "loss": epoch_loss,
-                    },
-                )
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
@@ -128,7 +135,7 @@ def train_model(model,
                     'optimizer': optimizer.state_dict(),
                 }
                 #save checkpoint
-                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model4.pt"
+                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model5.pt"
                 save_ckp(checkpoint, checkpoint_path)
 
         print()
@@ -140,7 +147,7 @@ def train_model(model,
 
     # load best model weights
     model.load_state_dict(best_model_wts)
-    return model, best_acc
+    return model, best_acc, loss_p, acc_p, f1_p
 
 
 if __name__ == "__main__":
@@ -152,7 +159,11 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LR)
 
-    final_model, best_acc = train_model(model,criterion,optimizer,dataloaders,dataset_sizes)
+    final_model, best_acc, loss_p, train_p, f1_p = train_model(model,criterion,optimizer,dataloaders,dataset_sizes)
+
+    print("loss dict",loss_p)
+    print("train dict",train_p)
+    print("f1 dict",f1_p)
 
     # checkpoint = {
     #         'epoch': EPOCHS,
