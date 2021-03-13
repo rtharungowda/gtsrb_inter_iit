@@ -21,11 +21,11 @@ from tools import save_ckp
 
 from torch.utils.tensorboard import SummaryWriter
 
-EPOCHS = 100
+EPOCHS = 10
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(DEVICE)
 LR = 0.001
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
 def train_model(model, 
                 criterion, 
@@ -121,6 +121,15 @@ def train_model(model,
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
+                checkpoint = {
+                    'epoch': epoch,
+                    'valid_acc': best_acc,
+                    'state_dict': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                }
+                #save checkpoint
+                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model4.pt"
+                save_ckp(checkpoint, checkpoint_path)
 
         print()
 
@@ -145,13 +154,13 @@ if __name__ == "__main__":
 
     final_model, best_acc = train_model(model,criterion,optimizer,dataloaders,dataset_sizes)
 
-    checkpoint = {
-            'epoch': EPOCHS,
-            'valid_acc': best_acc,
-            'state_dict': model.state_dict(),
-            'optimizer': optimizer.state_dict(),
-        }
+    # checkpoint = {
+    #         'epoch': EPOCHS,
+    #         'valid_acc': best_acc,
+    #         'state_dict': model.state_dict(),
+    #         'optimizer': optimizer.state_dict(),
+    #     }
         
-    # save checkpoint
-    checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model4.pt"
-    save_ckp(checkpoint, checkpoint_path)
+    # # save checkpoint
+    # checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model4.pt"
+    # save_ckp(checkpoint, checkpoint_path)
