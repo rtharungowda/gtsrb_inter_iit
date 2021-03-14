@@ -69,12 +69,12 @@ def make_predictions(model,
 
 if __name__ == "__main__":
     # prep_csv("/content/GTSRB/GT-final_test.csv","/content/GTSRB/Final_Test/Images")
-    path = "/content/gtsrb_inter_iit/utils/gtsrb_train_all.csv"
+    path = "/content/gtsrb_inter_iit/utils/gtsrb_all_split_val.csv"
     print(path)
     df = pd.read_csv(path)
     dataset_size ,dataloader = preprocess(df,test=True,batch_size=64)
     num_classes = df['label'].nunique()
     model = TrafficSignNet(num_classes).to(DEVICE)
     optimizer = optim.Adam(model.parameters(),lr=0.001)
-    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_2.pt", model, optimizer, DEVICE)
+    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album.pt", model, optimizer, DEVICE)
     make_predictions(model, dataloader, dataset_size)

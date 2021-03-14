@@ -135,7 +135,7 @@ def train_model(model,
                     'optimizer': optimizer.state_dict(),
                 }
                 #save checkpoint
-                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_augmentor.pt"
+                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album.pt"
                 save_ckp(checkpoint, checkpoint_path)
 
         print()
@@ -159,10 +159,10 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LR)
 
-    final_model, best_acc, loss_p, train_p, f1_p = train_model(model,criterion,optimizer,dataloaders,dataset_sizes)
+    final_model, best_acc, loss_p, acc_p, f1_p = train_model(model,criterion,optimizer,dataloaders,dataset_sizes)
 
     print("loss dict",loss_p)
-    print("train dict",train_p)
+    print("train dict",acc_p)
     print("f1 dict",f1_p)
 
     # checkpoint = {
