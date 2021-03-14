@@ -4,8 +4,12 @@ from torchvision import transforms
 from sklearn.model_selection import train_test_split
 import pandas as pd
 from PIL import Image
-
 import numpy as np
+# import Augmentor 
+
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+
 import sys
 sys.path.insert(1,'/content/gtsrb_inter_iit/utils')
 
@@ -14,7 +18,7 @@ from tools import calc_mean_std
 class GTSRB(Dataset):
     def __init__(self,
                 dataframe,
-                transforms = None):
+                transforms):
         self.df = dataframe
         self.tf = transforms
     
@@ -25,8 +29,8 @@ class GTSRB(Dataset):
         x = Image.open(self.df.iloc[index]['path'])
         y = self.df.iloc[index]['label']
 
-        if self.tf is not None:
-            x = self.tf(x)
+        x = np.array(x)
+        x = self.tf(image=x)['image']
 
         return x,y
     
@@ -50,10 +54,10 @@ def mean_std(df, ratio=0.2):
 def preprocess(gtsrb, test=False ,ratio=0.2, batch_size = 64):
 
     if test:
-        test_transforms = transforms.Compose([
-            transforms.Resize((32,32)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.3401, 0.3120, 0.3212],[0.2725, 0.2609, 0.2669]),
+        test_transforms = A.Compose([
+            A.Resize(width=32, height=32),
+            A.Normalize(mean=[0.3401, 0.3120, 0.3212], std=[0.2725, 0.2609, 0.2669]),
+            ToTensorV2(),
         ])
 
         test_dataset = GTSRB(dataframe=gtsrb, transforms=test_transforms)
@@ -68,20 +72,51 @@ def preprocess(gtsrb, test=False ,ratio=0.2, batch_size = 64):
                                         stratify=gtsrb['label'],
                                         test_size=ratio,
                                         random_state=42)
+
+    df_train.to_csv('/content/gtsrb_inter_iit/utils/gtsrb_all_split_train.csv')
+    df_val.to_csv('/content/gtsrb_inter_iit/utils/gtsrb_all_split_val.csv')
+
     print(f"train imgs = {len(df_train)} val imgs = {len(df_val)}")
     df = {'train':df_train,'val':df_val}
 
     # mean (tensor([0.3401, 0.3120, 0.3212]), std tensor([0.2725, 0.2609, 0.2669]))
+
+    # p=Augmentor.Pipeline("/content/drive/MyDrive/Bosch/New Dataset/")
+    # *p.rotate(probability=1.0, max_left_rotation=10, max_right_rotation=10)
+    # p.skew_left_right( probability=0.7, magnitude=0.5)
+    # p.skew_top_bottom( probability=1, magnitude=1)
+    # p.skew_corner( probability=0.5, magnitude=1)
+    # *p.random_distortion( probability=1.0, grid_width=4, grid_height=4, magnitude=5)
+    # p.shear(probability=1, max_shear_left=15, max_shear_right=15) 
+    # p.random_erasing(probability=1, rectangle_area=0.5)
+
     data_transforms = {
-        "train": transforms.Compose([
-            transforms.Resize((32,32)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.3401, 0.3120, 0.3212],[0.2725, 0.2609, 0.2669]),
+        "train": A.Compose([
+            A.Resize(width=32, height=32),
+            # p.torch_transform(),
+            A.Rotate(always_apply=False, p=1.0, limit=(-24, 24), interpolation=0,
+                     border_mode=0, value=(0, 0, 0), mask_value=None),
+
+            A.ISONoise(always_apply=False, p=0.6, intensity=(0.10000000149011612, 1.5),
+                      color_shift=(0.03999999910593033, 0.4099999964237213)),
+
+            A.RandomRain(always_apply=False, p=0.4, slant_lower=-9, slant_upper=9, 
+                        drop_length=24, drop_width=1, drop_color=(0, 0, 0), blur_value=5, 
+                        brightness_coefficient=0.6299999952316284, rain_type=None),
+
+            A.GaussNoise(always_apply=False, p=1.0, var_limit=(10.0, 210.52999877929688)),
+
+            A.OpticalDistortion(always_apply=False, p=0.4, distort_limit=(-0.6399999856948853, 0.6399999856948853),
+                         shift_limit=(-0.20999999344348907, 0.20999999344348907), interpolation=0, border_mode=2, 
+                         value=(0, 0, 0), mask_value=None),
+
+            A.Normalize(mean=[0.3401, 0.3120, 0.3212], std=[0.2725, 0.2609, 0.2669]),
+            ToTensorV2(),
         ]),
-        "val": transforms.Compose([
-            transforms.Resize((32,32)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.3401, 0.3120, 0.3212],[0.2725, 0.2609, 0.2669]),
+        "val": A.Compose([
+            A.Resize(width=32, height=32),
+            A.Normalize(mean=[0.3401, 0.3120, 0.3212], std=[0.2725, 0.2609, 0.2669]),
+            ToTensorV2(),
         ])
     }
 

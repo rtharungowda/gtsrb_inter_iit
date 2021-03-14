@@ -135,7 +135,7 @@ def train_model(model,
                     'optimizer': optimizer.state_dict(),
                 }
                 #save checkpoint
-                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model5.pt"
+                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_augmentor.pt"
                 save_ckp(checkpoint, checkpoint_path)
 
         print()
