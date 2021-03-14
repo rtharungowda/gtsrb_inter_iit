@@ -76,5 +76,6 @@ if __name__ == "__main__":
     num_classes = df['label'].nunique()
     model = TrafficSignNet(num_classes).to(DEVICE)
     optimizer = optim.Adam(model.parameters(),lr=0.001)
-    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album.pt", model, optimizer, DEVICE)
+    model, _, epoch, val_acc = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album2.pt", model, optimizer, DEVICE)
+    print(f'epoch {epoch} val_acc{val_acc}')
     make_predictions(model, dataloader, dataset_size)

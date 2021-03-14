@@ -13,17 +13,18 @@ from PIL import Image
 import numpy as np
 import time
 import copy
+import matplotlib.pyplot as plt
 
 import sys
 sys.path.insert(1,'/content/gtsrb_inter_iit/engine/')
 sys.path.insert(1,'/content/gtsrb_inter_iit/utils/')
 from model import TrafficSignNet
 from dataloader import preprocess
-from tools import save_ckp
+from tools import save_ckp, load_ckp
 
 from torch.utils.tensorboard import SummaryWriter
 
-EPOCHS = 10
+EPOCHS = 50
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(DEVICE)
 LR = 0.001
@@ -135,7 +136,7 @@ def train_model(model,
                     'optimizer': optimizer.state_dict(),
                 }
                 #save checkpoint
-                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album.pt"
+                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album2.pt"
                 save_ckp(checkpoint, checkpoint_path)
 
         print()
@@ -158,20 +159,79 @@ if __name__ == "__main__":
     model = TrafficSignNet(num_classes)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LR)
+    model = model.to(DEVICE)
+    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album2.pt", model, optimizer, DEVICE)
 
     final_model, best_acc, loss_p, acc_p, f1_p = train_model(model,criterion,optimizer,dataloaders,dataset_sizes)
 
     print("loss dict",loss_p)
     print("train dict",acc_p)
     print("f1 dict",f1_p)
-
     # checkpoint = {
     #         'epoch': EPOCHS,
     #         'valid_acc': best_acc,
     #         'state_dict': model.state_dict(),
     #         'optimizer': optimizer.state_dict(),
     #     }
-        
+    
+
+    # loss_p = {'train':[10,20,30,45],'val':[45,20,30,45]}
+    # acc_p = {'train':[100,20,30,45],'val':[10,0,30,45]}
+    # f1_p = {'train':[10,2,30,5],'val':[1,20,3,45]}
+    # EPOCHS = 4
+    x = [i for i in range(EPOCHS)]
+    print(x)
+
+    #loss
+    plt.plot(x,loss_p['train'],color='red', marker='o')
+    plt.title('Train loss')
+    plt.xlabel('epochs')
+    plt.ylabel('loss')
+    plt.grid(True) 
+    plt.savefig('/content/gtsrb_inter_iit/utils/train_loss.png')
+    plt.clf()
+
+    plt.plot(x, loss_p['val'],color='red', marker='o')
+    plt.title('Val loss')
+    plt.xlabel('epochs')
+    plt.ylabel('loss')
+    plt.grid(True) 
+    plt.savefig('/content/gtsrb_inter_iit/utils/val_loss.png')
+    plt.clf()
+    
+    #acc
+    plt.plot(x, acc_p['train'],color='red', marker='o')
+    plt.title('Train acc')
+    plt.xlabel('epochs')
+    plt.ylabel('acc')
+    plt.grid(True) 
+    plt.savefig('/content/gtsrb_inter_iit/utils/train_acc.png')
+    plt.clf()
+
+    plt.plot(x, acc_p['val'],color='red', marker='o')
+    plt.title('Val acc')
+    plt.xlabel('epochs')
+    plt.ylabel('acc')
+    plt.grid(True) 
+    plt.savefig('/content/gtsrb_inter_iit/utils/val_acc.png')
+    plt.clf()
+
+    #f1 
+    plt.plot(x, f1_p['train'],color='red', marker='o')
+    plt.title('Train f1')
+    plt.xlabel('epochs')
+    plt.ylabel('f1')
+    plt.grid(True) 
+    plt.savefig('/content/gtsrb_inter_iit/utils/train_f1.png')
+    plt.clf()
+
+    plt.plot(x, f1_p['val'],color='red', marker='o')
+    plt.title('Val f1')
+    plt.xlabel('epochs')
+    plt.ylabel('f1')
+    plt.grid(True) 
+    plt.savefig('/content/gtsrb_inter_iit/utils/val_f1.png') 
+    plt.clf()   
     # # save checkpoint
     # checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/model4.pt"
     # save_ckp(checkpoint, checkpoint_path)

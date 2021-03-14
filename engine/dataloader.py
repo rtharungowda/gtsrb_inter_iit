@@ -62,20 +62,28 @@ def preprocess(gtsrb, test=False ,ratio=0.2, batch_size = 64):
 
         test_transforms = A.Compose([
             A.Resize(width=32, height=32),
-            # p.torch_transform(),
             A.Rotate(always_apply=False, p=1.0, limit=(-24, 24), interpolation=0,
                      border_mode=0, value=(0, 0, 0), mask_value=None),
 
-            A.ISONoise(always_apply=False, p=0.6, intensity=(0.10000000149011612, 1.5),
-                      color_shift=(0.03999999910593033, 0.4099999964237213)),
+            A.OneOf([
+                A.GaussNoise(var_limit=(10.0, 210.52999877929688)),
+                A.ISONoise(intensity=(0.10000000149011612, 1.5),
+                           color_shift=(0.03999999910593033, 0.4099999964237213)),
+            ],p=0.7),
+            
+            A.OneOf([
+                A.RandomRain(slant_lower=-9, slant_upper=9, 
+                            drop_length=24, drop_width=1, drop_color=(0, 0, 0), blur_value=5, 
+                            brightness_coefficient=0.6299999952316284, rain_type=None),
 
-            A.RandomRain(always_apply=False, p=0.4, slant_lower=-9, slant_upper=9, 
-                        drop_length=24, drop_width=1, drop_color=(0, 0, 0), blur_value=5, 
-                        brightness_coefficient=0.6299999952316284, rain_type=None),
+                A.RandomFog(fog_coef_lower=0.10000000149011612,
+                            fog_coef_upper=0.5399999618530273, alpha_coef=0.7799999713897705),
 
-            A.GaussNoise(always_apply=False, p=1.0, var_limit=(10.0, 210.52999877929688)),
+                A.RandomSnow(snow_point_lower=0.10000000149011612,
+                            snow_point_upper=0.28999999165534973, brightness_coeff=1.5299999713897705),
+            ],p=0.8),
 
-            A.OpticalDistortion(always_apply=False, p=0.4, distort_limit=(-0.6399999856948853, 0.6399999856948853),
+            A.OpticalDistortion(p=0.4, distort_limit=(-0.6399999856948853, 0.6399999856948853),
                          shift_limit=(-0.20999999344348907, 0.20999999344348907), interpolation=0, border_mode=2, 
                          value=(0, 0, 0), mask_value=None),
 
@@ -116,28 +124,61 @@ def preprocess(gtsrb, test=False ,ratio=0.2, batch_size = 64):
     data_transforms = {
         "train": A.Compose([
             A.Resize(width=32, height=32),
-            # p.torch_transform(),
             A.Rotate(always_apply=False, p=1.0, limit=(-24, 24), interpolation=0,
                      border_mode=0, value=(0, 0, 0), mask_value=None),
 
-            A.ISONoise(always_apply=False, p=0.6, intensity=(0.10000000149011612, 1.5),
-                      color_shift=(0.03999999910593033, 0.4099999964237213)),
+            A.OneOf([
+                A.GaussNoise(var_limit=(10.0, 210.52999877929688)),
+                A.ISONoise(intensity=(0.10000000149011612, 1.5),
+                           color_shift=(0.03999999910593033, 0.4099999964237213)),
+            ],p=0.7),
+            
+            A.OneOf([
+                A.RandomRain(slant_lower=-9, slant_upper=9, 
+                            drop_length=24, drop_width=1, drop_color=(0, 0, 0), blur_value=5, 
+                            brightness_coefficient=0.6299999952316284, rain_type=None),
 
-            A.RandomRain(always_apply=False, p=0.4, slant_lower=-9, slant_upper=9, 
-                        drop_length=24, drop_width=1, drop_color=(0, 0, 0), blur_value=5, 
-                        brightness_coefficient=0.6299999952316284, rain_type=None),
+                A.RandomFog(fog_coef_lower=0.10000000149011612,
+                            fog_coef_upper=0.5399999618530273, alpha_coef=0.7799999713897705),
 
-            A.GaussNoise(always_apply=False, p=1.0, var_limit=(10.0, 210.52999877929688)),
+                A.RandomSnow(snow_point_lower=0.10000000149011612,
+                            snow_point_upper=0.28999999165534973, brightness_coeff=1.5299999713897705),
+            ],p=0.8),
 
-            A.OpticalDistortion(always_apply=False, p=0.4, distort_limit=(-0.6399999856948853, 0.6399999856948853),
+            A.OpticalDistortion(p=0.4, distort_limit=(-0.6399999856948853, 0.6399999856948853),
                          shift_limit=(-0.20999999344348907, 0.20999999344348907), interpolation=0, border_mode=2, 
                          value=(0, 0, 0), mask_value=None),
 
             A.Normalize(mean=[0.3401, 0.3120, 0.3212], std=[0.2725, 0.2609, 0.2669]),
             ToTensorV2(),
         ]),
-        "val": A.Compose([
+        "val":A.Compose([
             A.Resize(width=32, height=32),
+            A.Rotate(always_apply=False, p=1.0, limit=(-24, 24), interpolation=0,
+                     border_mode=0, value=(0, 0, 0), mask_value=None),
+
+            A.OneOf([
+                A.GaussNoise(var_limit=(10.0, 210.52999877929688)),
+                A.ISONoise(intensity=(0.10000000149011612, 1.5),
+                           color_shift=(0.03999999910593033, 0.4099999964237213)),
+            ],p=0.7),
+            
+            A.OneOf([
+                A.RandomRain(slant_lower=-9, slant_upper=9, 
+                            drop_length=24, drop_width=1, drop_color=(0, 0, 0), blur_value=5, 
+                            brightness_coefficient=0.6299999952316284, rain_type=None),
+
+                A.RandomFog(fog_coef_lower=0.10000000149011612,
+                            fog_coef_upper=0.5399999618530273, alpha_coef=0.7799999713897705),
+
+                A.RandomSnow(snow_point_lower=0.10000000149011612,
+                            snow_point_upper=0.28999999165534973, brightness_coeff=1.5299999713897705),
+            ],p=0.8),
+
+            A.OpticalDistortion(p=0.4, distort_limit=(-0.6399999856948853, 0.6399999856948853),
+                         shift_limit=(-0.20999999344348907, 0.20999999344348907), interpolation=0, border_mode=2, 
+                         value=(0, 0, 0), mask_value=None),
+
             A.Normalize(mean=[0.3401, 0.3120, 0.3212], std=[0.2725, 0.2609, 0.2669]),
             ToTensorV2(),
         ])
