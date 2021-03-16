@@ -66,7 +66,7 @@ def make_img(path,folder):
     img = Image.open(path)
     img = np.array(img)
     base_ = os.path.basename(path)
-    filename = base_.split()[0]
+    filename = base_.split('.')[0]
     print(filename)
 
     fld = os.path.join('/content/drive/MyDrive/Bosch/Aug_new_5_classes',folder)
@@ -86,15 +86,21 @@ def make_img(path,folder):
     nx3 = Image.fromarray(x3)
     nx3.save(flname+'_03.png')
 
+    return 3
+
 if __name__ == "__main__":
     for i in range(43,48):
         print(f'folder {i}')
         path = '/content/drive/MyDrive/Bosch/New Dataset/000'+str(i)
         ext = ['jpg','jpeg','png','ppm']
         files = []
-        print('loading.....')
+        # print('loading.....')
         [files.extend(glob.glob(path + '/*.' + e)) for e in ext]
+        tt = 0
+        print('number of files ',len(files))
         for j in range(len(files)):
-           pth = os.path.join(path,files[j])
+            pth = os.path.join(path,files[j])
         #    print(pth)
-           make_img(pth,'000'+str(i))
+            tt+= make_img(pth,'000'+str(i))
+            
+        print(tt)

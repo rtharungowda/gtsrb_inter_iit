@@ -59,7 +59,7 @@ def train_model(model,
     loss_p = {'train':[],'val':[]}
     acc_p = {'train':[],'val':[]}
     f1_p = {'train':[],'val':[]}
-
+    not_imp = 0
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -127,6 +127,7 @@ def train_model(model,
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
+                not_imp = 0
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
                 checkpoint = {
@@ -136,9 +137,16 @@ def train_model(model,
                     'optimizer': optimizer.state_dict(),
                 }
                 #save checkpoint
-                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album2.pt"
+                checkpoint_path = "/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album3_aug.pt"
                 save_ckp(checkpoint, checkpoint_path)
+            elif phase=='val' and epoch_acc < best_acc:
+                not_imp += 1
 
+            if not_imp > 15:
+                break 
+
+        if not_imp > 15:
+            break             
         print()
 
     time_elapsed = time.time() - since
@@ -152,15 +160,15 @@ def train_model(model,
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("/content/gtsrb_inter_iit/utils/gtsrb_train_all.csv")
+    df = pd.read_csv("/content/gtsrb_inter_iit/utils/gtsrb_train_all_5aug.csv")
     dataset_sizes,dataloaders = preprocess(df,ratio=0.1,batch_size=BATCH_SIZE)
     num_classes = df['label'].nunique()
     print(f"number of classes {num_classes}")
     model = TrafficSignNet(num_classes)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LR)
-    model = model.to(DEVICE)
-    model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album2.pt", model, optimizer, DEVICE)
+    # model = model.to(DEVICE)
+    # model, _, _, _ = load_ckp("/content/drive/MyDrive/competitions/bosh-inter-iit/48_classes_album2.pt", model, optimizer, DEVICE)
 
     final_model, best_acc, loss_p, acc_p, f1_p = train_model(model,criterion,optimizer,dataloaders,dataset_sizes)
 
